@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  mcp:
+    build: .
+    container_name: mcp_server
+    ports:
+      - "8000:8000"          # host‑to‑container mapping
+    deploy:
+      resources:             # optional limits for fairness
+        limits:
+          cpus: "1.0"
+          memory: "512M"

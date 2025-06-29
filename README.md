@@ -1,52 +1,60 @@
-# Gitlab component template
+# MCP Performance Benchmark Suite
 
-<!--
-Update this readme with your component details. Replace content in `< >` with your project information.
-For more information:
+This repository provides tools for benchmarking the performance of a minimal MCP (Model Context Protocol) server under both **bare-metal** and **containerized** conditions.
 
-- How to create a CI/CD component: https://docs.gitlab.com/ee/ci/components/#write-a-component
-- How to write a clear README.md file: https://docs.gitlab.com/ee/ci/components/#write-a-clear-readmemd
-- CI/CD Component security best practices: https://docs.gitlab.com/ee/ci/components/#cicd-component-security-best-practices
--->
+You can choose between:
 
-<!-- Uncomment and update the following link to display a release badge: https://docs.gitlab.com/ee/user/project/badges.html#latest-release-badges -->
-<!-- [![Latest Release](https://gitlab.com/<your project path>/-/badges/release.svg)](https://gitlab.com/<your project path>/-/releases) -->
+- **Classic Workflow (OLD)**: Measures latency and throughput only  
+- **Extended Workflow (NEW)**: Captures additional system-level metrics including cold-start, CPU/RSS usage, deploy time, and container image size
 
-## Components
+---
 
-### `<Component-name>`
+## Quick Start
 
-Use this component to `<component-description>`.
+### Workflow Options
 
-To add this component to your CI/CD pipeline, add the following include entry to your
-project's CI/CD configuration:
+| Workflow       | Description                                    |
+|----------------|------------------------------------------------|
+| Classic        | Fast latency and throughput comparison         |
+| Extended       | Full system metrics, figures, and tables       |
 
-```yaml
-include:
-  - component: https://gitlab.com/<your project path>/<name of your template>@<tag>
+---
+
+## Classic Workflow (Latency & Throughput Only)
+
+### A. Containerized Benchmark
+```bash
+chmod +x run_container.sh
+./run_container.sh 8 32 64 128   # Run with different concurrency levels
+```
+### B. Bare-Metal Benchmark
+```bash
+chmod +x run_baremetal.sh
+./run_baremetal.sh 8 32 64 128
+```
+### C. Compare Results
+```bash
+python compare_results.py \
+  results_20250701_1530            # bare-metal results dir
+  results_container_20250701_1600  # container results dir
 ```
 
-Where `<tag>` is the release tag you want to use ([releases list](https://gitlab.com/<your-project-path>/-/releases)).
+## Extended Workflow (Full Systems Metrics)
+### A. Bare-Metal Extended Benchmark
+```bash
+chmod +x run_baremetal_ext.sh monitor_pidstat.sh
+./run_baremetal_ext.sh 8 32 64 128
+```
 
-## Inputs
+### B. Container Extended Benchmark
+```bash
+chmod +x run_container_ext.sh
+./run_container_ext.sh 8 32 64 128
+```
 
-The template contains some optional [inputs](https://docs.gitlab.com/ee/ci/yaml/inputs.html):
-
-<!-- Add or update rows if you change the inputs in the template -->
-
-| Input      | Default value    | Description |
-|------------|------------------|-------------|
-| `job_name` | `job-template`   | The job name. |
-| `image`    | `busybox:latest` | The container image to use to run the job. |
-| `stage`    | `test`           | The stage name for the job. |
-
-## Documentation
-
-This project includes a MVC structure to help you get started with [Gitlab CI/CD components](https://docs.gitlab.com/ee/ci/components/).
-The template provides the basic file structure to create your own single component.
-This project should be public, or one of the jobs in the project's pipeline won't work.
-
-## Licence
-
-The licence can be changed. By default this project has the [MIT Licence](./LICENCE).
-<!-- You should update the year and name in the license file. -->
+### C. Generate Plots and Tables
+```bash
+python plot_extended.py \
+  results_bare_20250701_1410/extended_summary.json \
+  results_ctn_20250701_1450/extended_summary.json
+```
