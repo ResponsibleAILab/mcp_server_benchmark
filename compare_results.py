@@ -1,17 +1,36 @@
 """Merge bare‑metal and container summaries → CSV & overlay plot."""
 import json, sys, pandas as pd, matplotlib.pyplot as plt, pathlib
 
+
+def load_summary(path, mode):
+    summary_path = path / 'extended_summary.json'
+    if not summary_path.exists():
+        raise FileNotFoundError(f"{summary_path} does not exist.")
+
+    with open(summary_path) as f:
+        data = json.load(f)
+        rows = []
+        for users, metrics in data['per_load'].items():
+            if metrics.get('p95_ms') != "N/A" and metrics.get('throughput_rps') != "N/A":
+                rows.append({
+                    'users': int(users),
+                    'p95': metrics['p95_ms'],
+                    'rps': metrics['throughput_rps'],
+                    'mode': mode
+                })
+        return pd.DataFrame(rows)
+
+
 if len(sys.argv) != 3:
     print("Usage: python compare_results.py <baremetal_dir> <container_dir>")
     sys.exit(1)
 
 bare_dir, cont_dir = map(pathlib.Path, sys.argv[1:])
-with open(bare_dir / 'summary.json') as fb, open(cont_dir / 'summary.json') as fc:
-    df_bare = pd.DataFrame(json.load(fb)).assign(mode='bare')
-    df_cont = pd.DataFrame(json.load(fc)).assign(mode='container')
-
+df_bare = load_summary(bare_dir, 'bare')
+df_cont = load_summary(cont_dir, 'container')
 df = pd.concat([df_bare, df_cont])
-print(df.pivot(index='users', columns='mode', values=['p95','rps']))
+
+print(df.pivot(index='users', columns='mode', values=['p95', 'rps']))
 
 # ---- Plot ----
 fig, ax1 = plt.subplots()
