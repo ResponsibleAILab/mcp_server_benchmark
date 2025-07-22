@@ -58,3 +58,20 @@ python plot_extended.py \
   results_bare_20250701_1410/extended_summary.json \
   results_ctn_20250701_1450/extended_summary.json
 ```
+
+## Using Alpaca Dataset w/ LLaMA 3.2-1B-Instruct
+
+The alpaca dataset is a collection of ~52000 synthetic prompt-response pairs originally curated by Stanford CRFM.
+
+```bash
+python3 compare_alpaca_eval.py \
+  results_bare_*/alpaca_eval.json \
+  results_ctn_*/alpaca_eval.json
+```
+
+| Metric          | Meaning                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------- |
+| **BLEU**        | Measures **n-gram overlap** between the generated output and the reference. Higher = better accuracy.       |
+| **ROUGE**       | Measures **recall**-based similarity (focuses on how much of the reference is captured).                    |
+| **Pass\@1**     | Fraction of examples where the generated output **matches exactly** (often used in coding tasks, stricter). |
+| **Avg Latency** | Average time (in milliseconds) the server took to respond to each prompt. Lower = faster.                   |

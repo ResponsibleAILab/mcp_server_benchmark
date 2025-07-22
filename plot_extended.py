@@ -62,4 +62,4 @@ with open("ops_table.tex", "w") as f:
         f.write(f"{k.replace('_','\\_')} & {vb} & {vc} \\\\\n")
     f.write("\\end{tabular}\n\\end{table}\n")
 
-print("✅ Created perf_vs_users.pdf, resource_vs_users.pdf, perf_table.tex, ops_table.tex")
+print("Created perf_vs_users.pdf, resource_vs_users.pdf, perf_table.tex, ops_table.tex")

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Extended container benchmark – full metric set (no perf cycles).
-set -euo pipefail
+# set -euo pipefail
+
 IMAGE=mcp_server:bench
 SERVER_PORT=8000
 TEST_DURATION=300
@@ -16,9 +17,14 @@ docker build -t "$IMAGE" -f Dockerfile .
 BUILD_TIME=$SECONDS
 IMG_SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}')
 
-### (1) Cold-start timer
+### (1) Cold-start timer and run container with GPU
 START_MS=$(date +%s%3N)
-docker run --rm -d -p $SERVER_PORT:8000 --name mcp_bench "$IMAGE"
+docker run --gpus all --rm -d \
+  -p $SERVER_PORT:8000 \
+  --name mcp_bench \
+  "$IMAGE"
+
+# Wait for MCP endpoint to be available
 until curl -s -o /dev/null -w '%{http_code}' http://localhost:$SERVER_PORT/mcp \
          -X POST -d '{"prompt":"ping"}' -H "Content-Type: application/json" \
          | grep -q 200; do sleep 0.1; done
@@ -30,7 +36,7 @@ docker stats --no-stream=false --format \
 > "$LOG_DIR/docker_stats_raw.json" &
 MON_ID=$!
 
-### (3) Load loops
+### (3) Load testing with Locust
 for users in "$@"; do
   echo "Load = $users users"
   locust -f locustfile.py --headless -u "$users" -r "$users" \
@@ -41,10 +47,16 @@ for users in "$@"; do
   sleep 5
 done
 
-### (4) Cleanup
-kill $MON_ID 2>/dev/null || true
-docker stop mcp_bench
+### (4) Evaluate Alpaca BEFORE container shuts down
+echo "Evaluating Alpaca dataset..."
+python3 evaluate_alpaca.py \
+    --url http://localhost:$SERVER_PORT/mcp \
+    --out "$LOG_DIR/alpaca_scores.json"
 
-### (5) Aggregate
-python aggregate_extended.py container "$LOG_DIR" "$BUILD_TIME" "$COLD_MS" "$IMG_SIZE"
-echo "✅  Container extended_summary.json at $LOG_DIR"
+### (5) Cleanup
+kill $MON_ID 2>/dev/null || true
+docker stop mcp_bench || true
+
+### (6) Aggregate results
+python3 aggregate_extended.py container "$LOG_DIR" "$BUILD_TIME" "$COLD_MS" "$IMG_SIZE"
+echo "Container extended_summary.json at $LOG_DIR"

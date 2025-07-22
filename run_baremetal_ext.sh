@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Extended bare-metal benchmark  –  collects full metric set.
-set -euo pipefail
+# set -euo pipefail
 SERVER_PORT=8000
 VENV_DIR=benchmark_venv
 TEST_DURATION=300
@@ -14,11 +14,13 @@ banner(){ echo -e "\n========= $* ========="; }
 SECONDS=0
 python3 -m venv "$VENV_DIR" && source "$VENV_DIR/bin/activate"
 pip install --quiet --upgrade pip fastapi uvicorn locust psutil >/dev/null
+echo "Warming up model cache..."
+python3 preload_llama.py || true
 DEPLOY_TIME=$SECONDS
 
 ### (1) Cold-start timer
 START_MS=$(date +%s%3N)
-python mcp_server.py & SRV_PID=$!
+python3 mcp_server.py & SRV_PID=$!
 trap 'kill "$SRV_PID" 2>/dev/null || true' EXIT
 until curl -s -o /dev/null -w '%{http_code}' http://localhost:$SERVER_PORT/mcp \
          -X POST -d '{"prompt":"ping"}' -H "Content-Type: application/json" \
@@ -32,19 +34,25 @@ read PIDSTAT_ID PERF_ID < <(./monitor_pidstat.sh \
 ### (3) Load loops
 for users in "$@"; do
   echo "Load = $users users"
+  echo "=== Starting locust test for $users users ==="
   locust -f locustfile.py --headless -u "$users" -r "$users" \
          --host http://localhost:$SERVER_PORT \
          --run-time "$((WARMUP_DURATION+TEST_DURATION))s" \
          --csv "$LOG_DIR/metrics_${users}" --only-summary \
          >"$LOG_DIR/locust_${users}users.txt" 2>&1
+  echo "=== Finished locust test for $users users ==="
   sleep 5
 done
 
-### (5) Aggregate
-python aggregate_extended.py bare "$LOG_DIR" "$DEPLOY_TIME" "$COLD_MS"
-echo "✅  Bare-metal extended_summary.json at $LOG_DIR"
+### (4) Aggregate
+python3 aggregate_extended.py bare "$LOG_DIR" "$DEPLOY_TIME" "$COLD_MS"
+echo "Bare-metal extended_summary.json at $LOG_DIR"
 
-### (4) Cleanup
+### (5) Evaluate Alpaca
+echo "Evaluating Alpaca dataset..."
+python3 evaluate_alpaca.py --url "http://localhost:$SERVER_PORT/mcp" --out "$LOG_DIR/alpaca_eval.json"
+
+### (6) Cleanup
 kill $PIDSTAT_ID $PERF_ID 2>/dev/null || true
 wait $PIDSTAT_ID $PERF_ID 2>/dev/null || true
 kill "$SRV_PID" 2>/dev/null || true

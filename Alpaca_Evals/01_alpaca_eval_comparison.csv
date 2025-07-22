@@ -1,0 +1,5 @@
+Metric,Bare-Metal,Container
+BLEU,0.0725,0.0803
+ROUGE,0.2742,0.2851
+Pass@1,0.04,0.05
+Avg Latency (ms),3625.21,3525.49
