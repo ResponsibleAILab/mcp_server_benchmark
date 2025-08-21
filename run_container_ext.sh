@@ -3,6 +3,7 @@
 # set -euo pipefail
 
 IMAGE=mcp_server:bench
+VENV_DIR=benchmark_venv
 SERVER_PORT=8000
 TEST_DURATION=300
 WARMUP_DURATION=60
@@ -13,6 +14,8 @@ banner(){ echo -e "\n========= $* ========="; }
 
 ### (0) Build timer + image size
 SECONDS=0
+python3 -m venv "$VENV_DIR" && source "$VENV_DIR/bin/activate"
+pip install --quiet --upgrade pip fastapi uvicorn locust psutil >/dev/null
 docker build -t "$IMAGE" -f Dockerfile .
 BUILD_TIME=$SECONDS
 IMG_SIZE=$(docker image inspect "$IMAGE" --format='{{.Size}}')
@@ -49,14 +52,28 @@ done
 
 ### (4) Evaluate Alpaca BEFORE container shuts down
 echo "Evaluating Alpaca dataset..."
-python3 evaluate_alpaca.py \
-    --url http://localhost:$SERVER_PORT/mcp \
-    --out "$LOG_DIR/alpaca_scores.json"
+python3 evaluate/evaluate_alpaca.py \
+    --url "http://localhost:$SERVER_PORT/mcp" \
+    --out "$LOG_DIR/alpaca_eval.json"
 
-### (5) Cleanup
+### (5) Evaluate SQuAD v2
+echo "Evaluating SQuAD v2 (container)..."
+python3 evaluate/evaluate_squad.py \
+  --url "http://localhost:$SERVER_PORT/mcp" \
+  --out "$LOG_DIR/squad_eval.json" \
+  --split "validation[:200]"
+
+### (6) Evaluate BoolQ
+echo "Evaluating BoolQ (container)..."
+python3 evaluate/evaluate_boolq.py \
+  --url "http://localhost:$SERVER_PORT/mcp" \
+  --out "$LOG_DIR/boolq_eval.json" \
+  --split "validation[:500]"
+
+### (7) Cleanup
 kill $MON_ID 2>/dev/null || true
 docker stop mcp_bench || true
 
-### (6) Aggregate results
+### (8) Aggregate results
 python3 aggregate_extended.py container "$LOG_DIR" "$BUILD_TIME" "$COLD_MS" "$IMG_SIZE"
 echo "Container extended_summary.json at $LOG_DIR"

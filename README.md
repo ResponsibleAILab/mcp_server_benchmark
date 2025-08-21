@@ -4,12 +4,30 @@ This repository provides tools for benchmarking the performance of a minimal MCP
 
 You can choose between:
 
+- **Latest**: Provides latest method for running everything at once and a method to compare results for 3 datasets.
 - **Classic Workflow (OLD)**: Measures latency and throughput only  
 - **Extended Workflow (NEW)**: Captures additional system-level metrics including cold-start, CPU/RSS usage, deploy time, and container image size
 
 ---
 
-## Quick Start
+## Latest
+
+Ensure you create a python venv called benchmark_venv and install the requirements.txt within it. It will need to be Python 3.10 and pip3 too.
+
+```bash
+./run_all.sh
+```
+This will run 10 iterations of both bare-metal and container saving the results from each one
+
+```bash
+python3 compare_multi_run_suite.py \
+  --bare results_bare_20250720_101500 results_bare_20250720_111530 results_bare_20250720_121601 results_bare_20250720_131633 results_bare_20250720_141704 \
+  --ctn  results_ctn_20250720_102040  results_ctn_20250720_112115  results_ctn_20250720_122146  results_ctn_20250720_132218  results_ctn_20250720_142249 \
+  --out  multi_run_report
+```
+This is an example of getting all bare-metal and container reports compared and saved for evaluating results.
+
+## (OLD NOTES. IGNORE IF WANTING TO JUST RUN EXPERIMENT) Quick Start
 
 ### Workflow Options
 

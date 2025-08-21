@@ -10,8 +10,9 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY mcp_server.py /app/
-COPY evaluate_alpaca.py /app/
-COPY preload_llama.py /app/
+COPY evaluate/evaluate_alpaca.py /app/
+COPY evaluate/evaluate_boolq.py /app/
+COPY evaluate/evaluate_squad.py /app/
 
 EXPOSE 8000
 ENV HF_TOKEN="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"
