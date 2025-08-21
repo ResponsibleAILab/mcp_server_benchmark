@@ -15,7 +15,7 @@ SECONDS=0
 python3 -m venv "$VENV_DIR" && source "$VENV_DIR/bin/activate"
 pip install --quiet --upgrade pip fastapi uvicorn locust psutil >/dev/null
 echo "Warming up model cache..."
-python3 preload_llama.py || true
+#python3 preload_llama.py || true
 DEPLOY_TIME=$SECONDS
 
 ### (1) Cold-start timer
@@ -50,7 +50,15 @@ echo "Bare-metal extended_summary.json at $LOG_DIR"
 
 ### (5) Evaluate Alpaca
 echo "Evaluating Alpaca dataset..."
-python3 evaluate_alpaca.py --url "http://localhost:$SERVER_PORT/mcp" --out "$LOG_DIR/alpaca_eval.json"
+python3 evaluate/evaluate_alpaca.py --url "http://localhost:$SERVER_PORT/mcp" --out "$LOG_DIR/alpaca_eval.json"
+
+### (6) Evaluate Squad V2
+echo "Evaluating Squad V2 dataset..."
+python3 evaluate/evaluate_squad.py --url "http://localhost:$SERVER_PORT/mcp" --out "$LOG_DIR/squad_eval.json" --split "validation[:200]"
+
+### (7) Evaluate BoolQ
+echo "Evaluating BoolQ dataset..."
+python3 evaluate/evaluate_boolq.py --url "http://localhost:$SERVER_PORT/mcp" --out "$LOG_DIR/boolq_eval.json" --split "validation[:500]"
 
 ### (6) Cleanup
 kill $PIDSTAT_ID $PERF_ID 2>/dev/null || true
