@@ -73,7 +73,11 @@ for ax in axs.flat:
                     (p.get_x() + p.get_width() / 2., p.get_height()), 
                     ha='center', va='bottom')
 
+save_dir_bare = sys.argv[1]
+save_dir_container = sys.argv[2]
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-plt.savefig("alpaca_eval_comparison_plot.png")
-print("Saved: alpaca_eval_comparison_plot.png")
+plt.savefig(f"'{save_dir_bare}'/alpaca_eval_comparison_plot.png")
+print("Saved Bare Metal: alpaca_eval_comparison_plot.png")
+plt.savefig(f"'{save_dir_container}'/alpaca_eval_comparison_plot.png")
+print("Saved Container: alpaca_eval_comparison_plot.png")
 plt.show()
