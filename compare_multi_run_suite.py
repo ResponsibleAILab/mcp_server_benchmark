@@ -140,7 +140,12 @@ def bar_with_ci_all_datasets(ds_summary, metric, out_path, use_log=False):
     fig, ax = plt.subplots(figsize=(9.5, 5))
     order_ds = DATASETS
     x = np.arange(len(order_ds))
-    width = 0.35
+    width = 0.5
+
+    # --- Add gray background patches alternating across datasets ---
+    for i in range(len(order_ds)):
+        if i % 2 == 0:  # shade every other dataset
+            ax.axvspan(i - width, i + width, facecolor="lightgray", alpha=0.5, zorder=0)
 
     for i, env in enumerate(ENVS):
         chunk = ds_summary[(ds_summary["metric"]==metric) & (ds_summary["env"]==env)]
@@ -148,20 +153,25 @@ def bar_with_ci_all_datasets(ds_summary, metric, out_path, use_log=False):
         means = chunk["mean"].values.astype(float)
         lows  = chunk["ci_low"].values.astype(float)
         highs = chunk["ci_high"].values.astype(float)
-        ax.bar(x + (i-0.5)*width, means, width, label=env)
+        ax.bar(x + (i-0.5)*width, means, width, label=env, zorder=3)
         err_lo = np.clip(means - lows, 0, None)
         err_hi = np.clip(highs - means, 0, None)
-        ax.errorbar(x + (i-0.5)*width, means, yerr=[err_lo, err_hi], fmt='none', capsize=4)
+        ax.errorbar(
+            x + (i - 0.5) * width, means,
+            yerr=[np.clip(means - lows, 0, None), np.clip(highs - means, 0, None)],
+            fmt='none', capsize=4, ecolor='black', elinewidth=1.0, capthick=1.0, alpha=0.7, zorder=4
+        )
 
     ax.set_xticks(x)
-    ax.set_xticklabels(order_ds)
-    ax.set_ylabel(DS_METRIC_LABEL[metric])
-    ax.set_title(f'{DS_METRIC_LABEL[metric]} across datasets (mean ± 95% CI)')
+    ax.set_xticklabels(order_ds, fontsize=14)
+    ax.set_ylabel(DS_METRIC_LABEL[metric], fontsize=16)
+    ax.tick_params(axis="y", labelsize=14)
+    ax.tick_params(axis="x", labelsize=14)
     if use_log:
         ax.set_yscale("log")
-    ax.legend()
+    ax.legend(fontsize=16)
     fig.tight_layout()
-    fig.savefig(out_path)
+    fig.savefig(out_path, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
 
 def write_latex_table(ds_summary, metric, out_path):
@@ -245,10 +255,10 @@ def main():
     pd.DataFrame(wide_rows).to_csv(outdir / 'datasets_summary_wide.csv', index=False)
 
     # ---- Combined metric plots (all datasets on one chart)
-    bar_with_ci_all_datasets(ds_summary, "latency_ms", outdir / "metrics_combined_latency.png", use_log=True)
-    bar_with_ci_all_datasets(ds_summary, "bleu",       outdir / "metrics_combined_bleu.png")
-    bar_with_ci_all_datasets(ds_summary, "rouge",      outdir / "metrics_combined_rouge.png")
-    bar_with_ci_all_datasets(ds_summary, "pass1",      outdir / "metrics_combined_pass1.png")
+    bar_with_ci_all_datasets(ds_summary, "latency_ms", outdir / "metrics_combined_latency.pdf", use_log=True)
+    bar_with_ci_all_datasets(ds_summary, "bleu",       outdir / "metrics_combined_bleu.pdf")
+    bar_with_ci_all_datasets(ds_summary, "rouge",      outdir / "metrics_combined_rouge.pdf")
+    bar_with_ci_all_datasets(ds_summary, "pass1",      outdir / "metrics_combined_pass1.pdf")
 
     # ---- LaTeX tables per metric
     write_latex_table(ds_summary, "latency_ms", outdir / "latex_table_latency.tex")
@@ -303,7 +313,7 @@ def main():
             lines_ += lns; labels_ += lbs
         fig.legend(lines_, labels_, loc="upper center", ncol=2)
         fig.tight_layout(rect=[0,0,1,0.90])
-        fig.savefig(outdir / "combined_perf_users.png")
+        fig.savefig(outdir / "combined_perf_users.pdf", bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
     # Also export ops summary for completeness
@@ -312,9 +322,9 @@ def main():
 
     print(f"\nWrote outputs to: {outdir.resolve()}")
     print("  - datasets_summary.csv / datasets_summary_wide.csv")
-    print("  - metrics_combined_latency.png / _bleu.png / _rouge.png / _pass1.png")
+    print("  - metrics_combined_latency.pdf / _bleu.pdf / _rouge.pdf / _pass1.pdf")
     print("  - latex_table_latency.tex / _bleu.tex / _rouge.tex / _pass1.tex")
-    print("  - combined_perf_users.png")
+    print("  - combined_perf_users.pdf")
     print("  - extended_ops_summary.csv")
     print("  - per_run_index.csv")
 
