@@ -136,32 +136,52 @@ def collect_runs(dirs, env_label):
     return ds_df, ops_df, perf_df
 
 def bar_with_ci_all_datasets(ds_summary, metric, out_path, use_log=False):
-    """One figure: all datasets on x-axis; two bars (Bare/Container) per dataset, with 95% CI."""
+    """One figure: all datasets on x-axis; two bars (Bare/Container) per dataset, with 95% CI + hatches."""
     fig, ax = plt.subplots(figsize=(9.5, 5))
     order_ds = DATASETS
     x = np.arange(len(order_ds))
-    width = 0.5
+    width = 0.5  # your chosen group bar width
 
-    # --- Add gray background patches alternating across datasets ---
+    # --- Subtle alternating background bands per dataset group ---
     for i in range(len(order_ds)):
-        if i % 2 == 0:  # shade every other dataset
-            ax.axvspan(i - width, i + width, facecolor="lightgray", alpha=0.5, zorder=0)
+        if i % 2 == 0:  # shade every other dataset group
+            ax.axvspan(i - width, i + width, facecolor="lightgray", alpha=0.12, zorder=0)
 
+    # Hatch patterns for each env (distinct + print-friendly)
+    hatches = {
+        "Bare-Metal": "//",
+        "Container":  "xx",
+    }
+
+    # --- Bars + error bars ---
     for i, env in enumerate(ENVS):
-        chunk = ds_summary[(ds_summary["metric"]==metric) & (ds_summary["env"]==env)]
+        chunk = ds_summary[(ds_summary["metric"] == metric) & (ds_summary["env"] == env)]
         chunk = chunk.set_index("dataset").reindex(order_ds)
         means = chunk["mean"].values.astype(float)
         lows  = chunk["ci_low"].values.astype(float)
         highs = chunk["ci_high"].values.astype(float)
-        ax.bar(x + (i-0.5)*width, means, width, label=env, zorder=3)
+
+        # bars
+        ax.bar(
+            x + (i - 0.5) * width, means, width,
+            label=env,
+            hatch=hatches.get(env, ""),
+            edgecolor="black",
+            linewidth=0.8,
+            zorder=2,
+        )
+
+        # 95% CI error bars
         err_lo = np.clip(means - lows, 0, None)
         err_hi = np.clip(highs - means, 0, None)
         ax.errorbar(
             x + (i - 0.5) * width, means,
-            yerr=[np.clip(means - lows, 0, None), np.clip(highs - means, 0, None)],
-            fmt='none', capsize=4, ecolor='black', elinewidth=1.0, capthick=1.0, alpha=0.7, zorder=4
+            yerr=[err_lo, err_hi],
+            fmt='none', capsize=4, ecolor='black',
+            elinewidth=1.0, capthick=1.0, alpha=0.9, zorder=3
         )
 
+    # Axes cosmetics
     ax.set_xticks(x)
     ax.set_xticklabels(order_ds, fontsize=14)
     ax.set_ylabel(DS_METRIC_LABEL[metric], fontsize=16)
