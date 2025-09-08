@@ -30,22 +30,42 @@ Bare-metal runs were consistently faster, especially on longer outputs (e.g., Al
 **Overall Finding:**  
 Containerization introduces negligible accuracy loss while providing the benefits of portability, reproducibility, and ease of deployment, making it a viable choice for scalable LLM inference.
 
-**Evaluation Metrics for Bare-Metal vs. Container Deployments (Mean ± SD)**
+### Evaluation Metrics for Bare-Metal vs. Container (Mean ± SD)
 
-| Metric       | Dataset | Bare-Metal (Mean ± SD) | Container (Mean ± SD) |
-| ------------ | ------- | ---------------------- | --------------------- |
-| BLEU         | Alpaca  | 0.0653 ± 0.0022        | 0.0630 ± 0.0014       |
-|              | BoolQ   | 0.1221 ± 0.0012        | 0.1204 ± 0.0010       |
-|              | SQuADv2 | 0.1507 ± 0.0036        | 0.1482 ± 0.0025       |
-| ROUGE-L      | Alpaca  | 0.2513 ± 0.0024        | 0.2527 ± 0.0014       |
-|              | BoolQ   | 0.6865 ± 0.0071        | 0.6772 ± 0.0057       |
-|              | SQuADv2 | 0.6794 ± 0.0063        | 0.6853 ± 0.0121       |
-| Pass\@1      | Alpaca  | 0.0190 ± 0.0021        | 0.0164 ± 0.0017       |
-|              | BoolQ   | 0.6865 ± 0.0071        | 0.6772 ± 0.0057       |
-|              | SQuADv2 | 0.3846 ± 0.0110        | 0.3802 ± 0.0124       |
-| Latency (ms) | Alpaca  | 2112.2 ± 18.4          | 2153.1 ± 22.4         |
-|              | BoolQ   | 46.7 ± 3.1             | 47.4 ± 2.5            |
-|              | SQuADv2 | 171.8 ± 8.0            | 186.0 ± 8.2           |
+#### BLEU
+
+| Dataset |      Bare-Metal |       Container |
+| :------ | --------------: | --------------: |
+| Alpaca  | 0.0653 ± 0.0022 | 0.0630 ± 0.0014 |
+| BoolQ   | 0.1221 ± 0.0012 | 0.1204 ± 0.0010 |
+| SQuADv2 | 0.1507 ± 0.0036 | 0.1482 ± 0.0025 |
+
+#### ROUGE-L
+
+| Dataset |      Bare-Metal |       Container |
+| :------ | --------------: | --------------: |
+| Alpaca  | 0.2513 ± 0.0024 | 0.2527 ± 0.0014 |
+| BoolQ   | 0.6865 ± 0.0071 | 0.6772 ± 0.0057 |
+| SQuADv2 | 0.6794 ± 0.0063 | 0.6853 ± 0.0121 |
+
+#### Pass\@1
+
+| Dataset |      Bare-Metal |       Container |
+| :------ | --------------: | --------------: |
+| Alpaca  | 0.0190 ± 0.0021 | 0.0164 ± 0.0017 |
+| BoolQ   | 0.6865 ± 0.0071 | 0.6772 ± 0.0057 |
+| SQuADv2 | 0.3846 ± 0.0110 | 0.3802 ± 0.0124 |
+
+#### Latency *(ms)*
+
+| Dataset |    Bare-Metal |     Container |
+| :------ | ------------: | ------------: |
+| Alpaca  | 2112.2 ± 18.4 | 2153.1 ± 22.4 |
+| BoolQ   |    46.7 ± 3.1 |    47.4 ± 2.5 |
+| SQuADv2 |   171.8 ± 8.0 |   186.0 ± 8.2 |
+
+*Notes:* All values are reported as **Mean ± Standard Deviation**.
+
 
 
 ## Installation
@@ -108,5 +128,6 @@ If you find this work useful, please cite it as follows:
 ## **Acknowledgements**
 
 This work was supported in part by the National Science Foundation CCF-2447834.
+
 
 
