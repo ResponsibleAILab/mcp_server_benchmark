@@ -1,23 +1,71 @@
-# MCP Performance Benchmark Suite
+# **Evaluating Containerization Overhead in MCP Servers for Scalable LLM Inference: A Comparative Benchmark Study**
 
-This repository provides tools for benchmarking the performance of a minimal MCP (Model Context Protocol) server under both **bare-metal** and **containerized** conditions.
+# **Abstract**
 
-You can choose between:
+In recent years, the deployment of large language models (LLMs) through service-oriented architectures has gained traction in both research and production environments. However, few studies systematically evaluate the trade-offs between containerized and bare-metal deployments of model hosts in real-world scenarios—particularly for latency-sensitive applications involving LLMs. This paper investigates the performance implications of containerizing an MCP (Model Context Protocol) server responsible for hosting a lightweight LLM evaluated using multiple datasets. \textit{By comparing container-based and bare-metal deployments,} we analyze key performance metrics across multiple concurrent load levels. The goal is to determine whether containerized execution—often promoted for its scalability, reproducibility, and ease of deployment—introduces measurable overhead or compromises real-time model inference quality. Through rigorous benchmarking and extended resource monitoring, we provide empirical evidence suggesting that containerized MCP-served LLMs maintain comparable inference quality to bare-metal implementations, with negligible latency trade-offs under low-to-moderate concurrent user loads. Our findings reinforce the viability of containerization for scalable LLM serving in production systems and DevOps pipelines, where reliability, modularity, and automation are critical.
+The code is available at: https://github.com/ResponsibleAILab/mcp_server_benchmark.
 
-- **Latest**: Provides latest method for running everything at once and a method to compare results for 3 datasets.
-- **Classic Workflow (OLD)**: Measures latency and throughput only  
-- **Extended Workflow (NEW)**: Captures additional system-level metrics including cold-start, CPU/RSS usage, deploy time, and container image size
+## Containerized MCP Server Framework
 
----
+The following diagram illustrates the architecture of the containerized MCP server framework.
 
-## Latest
+![Containerized MCP Server Framework](Images/ContainerizedMCPServerFramework.png)
 
-Ensure you create a python venv called benchmark_venv and install the requirements.txt within it. It will need to be Python 3.10 and pip3 too.
+## Key Metrics
+
+| Metric          | Meaning                                                                                                     |
+| --------------- | ----------------------------------------------------------------------------------------------------------- |
+| **BLEU**        | Measures **n-gram overlap** between the generated output and the reference. Higher = better accuracy.       |
+| **ROUGE**       | Measures **recall**-based similarity (focuses on how much of the reference is captured).                    |
+| **Pass\@1**     | Fraction of examples where the generated output **matches exactly** (often used in coding tasks, stricter). |
+| **Avg Latency** | Average time (in milliseconds) the server took to respond to each prompt. Lower = faster.                   |
+
+## Key Results
+**Accuracy (BLEU, ROUGE-L, Pass@1):**  
+Containerized deployments achieved near-parity with bare-metal across all datasets, with differences within one standard deviation and overlapping 95% confidence intervals.
+
+**Latency:**  
+Bare-metal runs were consistently faster, especially on longer outputs (e.g., Alpaca), but container overhead was modest and remained within practical tolerances.
+
+**Overall Finding:**  
+Containerization introduces negligible accuracy loss while providing the benefits of portability, reproducibility, and ease of deployment, making it a viable choice for scalable LLM inference.
+
+![Evaluation Metrics For Bare-Metal vs. Container Deployments (Mean + SD)](Images/ResultsTable.png)
+
+## Installation
+1. Install Python v3.10+
+2. Set up a Python virtual environment
+
+### On Windows (PowerShell)
+```bash
+python3 -m venv benchmark_venv
+.\benchmark_venv\Scripts\Activate
+pip3 install -r requirements.txt
+.\benchmark_venv\Scripts\Deactivate
+```
+
+### On Linux / macOS
+```bash
+python3 -m venv benchmark_venv
+source benchmark_venv/bin/activate
+pip3 install -r requirements.txt
+deactivate
+```
+
+### All Operating System options need Docker
+- Windows use Docker Desktop
+- Linux install docker
+
+## To Run
+You DO NOT want to be in a venv when you execute the below bash script. It will call others to run bare-metal and container shell scripts.
 
 ```bash
 ./run_all.sh
 ```
 This will run 10 iterations of both bare-metal and container saving the results from each one
+
+## Compare Results
+Replace results_bare_* and results_ctn_* with yours that are generated when you run the following command.
 
 ```bash
 python3 compare_multi_run_suite.py \
@@ -27,69 +75,20 @@ python3 compare_multi_run_suite.py \
 ```
 This is an example of getting all bare-metal and container reports compared and saved for evaluating results.
 
-## (OLD NOTES. IGNORE IF WANTING TO JUST RUN EXPERIMENT) Quick Start
+## **Citation**
+If you find this work useful, please cite it as follows:
 
-### Workflow Options
-
-| Workflow       | Description                                    |
-|----------------|------------------------------------------------|
-| Classic        | Fast latency and throughput comparison         |
-| Extended       | Full system metrics, figures, and tables       |
-
----
-
-## Classic Workflow (Latency & Throughput Only)
-
-### A. Containerized Benchmark
-```bash
-chmod +x run_container.sh
-./run_container.sh 8 32 64 128   # Run with different concurrency levels
-```
-### B. Bare-Metal Benchmark
-```bash
-chmod +x run_baremetal.sh
-./run_baremetal.sh 8 32 64 128
-```
-### C. Compare Results
-```bash
-python compare_results.py \
-  results_20250701_1530            # bare-metal results dir
-  results_container_20250701_1600  # container results dir
+```bibtex
+@inproceedings{SteeleFeng2025MCP,
+  author    = {Michael Steele and Yunhe Feng},
+  title     = {Evaluating Containerization Overhead in {MCP} Servers for Scalable {LLM} Inference: A Comparative Benchmark Study},
+  booktitle = {Proceedings of the Integrated Approaches to Testing Data-Centric {AI} Systems: Methods, Metrics, and Benchmarks Workshop at {IEEE} Artificial Intelligence x Software Engineering ({AIxSE})},
+  year      = {2025},
+  publisher = {IEEE},
+  note      = {Workshop paper}
+}
 ```
 
-## Extended Workflow (Full Systems Metrics)
-### A. Bare-Metal Extended Benchmark
-```bash
-chmod +x run_baremetal_ext.sh monitor_pidstat.sh
-./run_baremetal_ext.sh 8 32 64 128
-```
+## **Acknowledgements**
 
-### B. Container Extended Benchmark
-```bash
-chmod +x run_container_ext.sh
-./run_container_ext.sh 8 32 64 128
-```
-
-### C. Generate Plots and Tables
-```bash
-python plot_extended.py \
-  results_bare_20250701_1410/extended_summary.json \
-  results_ctn_20250701_1450/extended_summary.json
-```
-
-## Using Alpaca Dataset w/ LLaMA 3.2-1B-Instruct
-
-The alpaca dataset is a collection of ~52000 synthetic prompt-response pairs originally curated by Stanford CRFM.
-
-```bash
-python3 compare_alpaca_eval.py \
-  results_bare_*/alpaca_eval.json \
-  results_ctn_*/alpaca_eval.json
-```
-
-| Metric          | Meaning                                                                                                     |
-| --------------- | ----------------------------------------------------------------------------------------------------------- |
-| **BLEU**        | Measures **n-gram overlap** between the generated output and the reference. Higher = better accuracy.       |
-| **ROUGE**       | Measures **recall**-based similarity (focuses on how much of the reference is captured).                    |
-| **Pass\@1**     | Fraction of examples where the generated output **matches exactly** (often used in coding tasks, stricter). |
-| **Avg Latency** | Average time (in milliseconds) the server took to respond to each prompt. Lower = faster.                   |
+This work was supported in part by the National Science Foundation CCF-2447834.
