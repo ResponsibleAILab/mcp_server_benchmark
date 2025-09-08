@@ -9,7 +9,7 @@ The code is available at: https://github.com/ResponsibleAILab/mcp_server_benchma
 
 The following diagram illustrates the architecture of the containerized MCP server framework.
 
-![Containerized MCP Server Framework](Images/ContainerizedMCPServerFramework.png)
+![Containerized MCP Server Framework](Images/MCP_Container_Diagram-update.drawio.svg)
 
 ## Key Metrics
 
@@ -128,6 +128,7 @@ If you find this work useful, please cite it as follows:
 ## **Acknowledgements**
 
 This work was supported in part by the National Science Foundation CCF-2447834.
+
 
 
 
